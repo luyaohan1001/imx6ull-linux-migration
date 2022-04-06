@@ -68,7 +68,7 @@
 			regulator-name = "VSD_3V3";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
-			gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+			/* gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>; */
 			enable-active-high;
 		};
 
@@ -169,6 +169,21 @@
 		key-gpio = <&gpio1 18 GPIO_ACTIVE_LOW>; /* gpio the key uses is gpio1 - 18 */
 		status = "okay";
 	};
+
+
+	/* luyaohan1001 : used for qt-arm-led-toggle experiment */
+	leds {
+		compatible = "gpio-leds";	/* Must be gpio-leds according to Documentation/devicetree/bindings/leds/leds-gpio.txt */
+
+		usr-led {
+			label = "usr-led";
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>; /* For example if ACTIVEHIGH then write 1 turns off the light */
+			linux,default-trigger = "none"; /* or heartbeat */
+			default-state = "off"; 
+			
+		};
+};
+
 
 
 };
@@ -274,6 +289,19 @@
 	pinctrl-0 = <&pinctrl_i2c2>;
 	status = "okay";
 
+	gt9147: gt9147@14 {
+		compatible = "goodix,gt9147", "goodix,gt9xx";
+		reg = <0x14>;	/* gt9147 I2C device address is 0x14 */
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_tsc>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <9 0>;
+		reset-gpios = <&gpio5 9 GPIO_ACTIVE_LOW>;
+		interrupt-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+
 	codec: wm8960@1a {
 		compatible = "wlf,wm8960";
 		reg = <0x1a>;
@@ -311,7 +339,7 @@
 			fsl,pins = <
 				MX6UL_PAD_UART1_RTS_B__GPIO1_IO19	0x17059 /* SD1 CD */
 				MX6UL_PAD_GPIO1_IO05__USDHC1_VSELECT	0x17059 /* SD1 VSELECT */
-				MX6UL_PAD_GPIO1_IO09__GPIO1_IO09        0x17059 /* SD1 RESET */
+				/* MX6UL_PAD_GPIO1_IO09__GPIO1_IO09        0x17059 */ /* SD1 RESET */
 			>;
 		};
 
@@ -455,12 +483,15 @@
 
 		pinctrl_tsc: tscgrp {
 			fsl,pins = <
-				MX6UL_PAD_GPIO1_IO01__GPIO1_IO01	0xb0
-				MX6UL_PAD_GPIO1_IO02__GPIO1_IO02	0xb0
-				MX6UL_PAD_GPIO1_IO03__GPIO1_IO03	0xb0
-				MX6UL_PAD_GPIO1_IO04__GPIO1_IO04	0xb0
+				/* MX6UL_PAD_GPIO1_IO01__GPIO1_IO01	0xb0 */
+				/* MX6UL_PAD_GPIO1_IO02__GPIO1_IO02	0xb0 */
+				/* MX6UL_PAD_GPIO1_IO03__GPIO1_IO03	0xb0 */
+				/* MX6UL_PAD_GPIO1_IO04__GPIO1_IO04	0xb0 */
+				MX6UL_PAD_SNVS_TAMPER9__GPIO5_IO09 0x10B0 /* TSC_RST */
+				MX6UL_PAD_GPIO1_IO09__GPIO1_IO09 0x10B0 /* TSC_INT */
 			>;
 		};
+
 
 		pinctrl_uart1: uart1grp {
 			fsl,pins = <
@@ -706,6 +737,7 @@
 	status = "okay";
 };
 
+/*
 &tsc {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_tsc>;
@@ -714,6 +746,7 @@
 	pre-charge-time = <0xfff>;
 	status = "okay";
 };
+*/
 
 &uart1 {
 	pinctrl-names = "default";
