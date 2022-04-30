@@ -1,0 +1,332 @@
+Place the right files into the subfolders in 'recipe' is the key.  Under ./recipe/
+1.boot directory:
+  |  file type | what it is? |
+  | .dtb file | the device tree
+  | zImage    | the kernel
+  | .imx      | uboot (bootloader)
+
+	$ cd ./recipe/boot
+	$ sudo chmod +x ./bot
+	$ ./bot fetch
+
+	
+2.filesystem:
+  | file type 		     | what it is? |
+  | rootfs.tar.bz2 / rootfs.tar| compress file for root file system.
+
+	$ cd ./recipe/filesystem
+	$ sudo chmod +x ./bot
+	$ ./bot fetch
+	
+
+3.modules:
+	Stores the compressed kernel modules.
+
+When everything is ready:
+
+	$ sudo fdisk -l
+	$ sudo ./autobot.sh -device /dev/sd<x> -flash emmc -ddrsize 512
+	
+When booting from sd card, enter 'Enter' in uboot:
+
+
+Normally dev 0 is the sd card, dev 1 is the emmc chip onboard.
+
+To test this, in putty serial:
+
+	# Expect:
+
+	=> ls mmc 0
+    		35969   imx6ull-14x14-evk.dtb 
+  		5582720   zimage 
+		2 file(s), 0 dir(s)
+
+	=> ls mmc 0:1
+    		35969   imx6ull-14x14-evk.dtb 
+  		5582720   zimage 
+		2 file(s), 0 dir(s)
+
+
+	=> ls mmc 1:1
+	    39323   imx6ull-14x14-emmc-10.1-1280x800-c.dtb 
+	    ...
+	    40067   imx6ull-14x14-emmc-vga.dtb 
+	    6785360   zimage 
+	    8 file(s), 0 dir(s)
+
+	=> ls mmc 1:2
+	<DIR>       4096 .
+	<DIR>       4096 ..
+	<DIR>      16384 lost+found
+	<DIR>       4096 bin
+	<DIR>       4096 boot
+	<DIR>       4096 dev
+	<DIR>       4096 etc
+	<DIR>       4096 home
+	<DIR>       4096 lib
+	<DIR>       4096 media
+	<DIR>       4096 mnt
+	<DIR>       4096 opt
+	<DIR>       4096 proc
+	<DIR>       4096 run
+	<DIR>       4096 sbin
+	<DIR>       4096 sys
+	<SYM>          8 tmp
+	<DIR>       4096 usr
+	<DIR>       4096 var
+	<DIR>       4096 .cache
+	<DIR>       4096 .local
+	<DIR>       4096 .config
+	<DIR>       4096 .aiur
+       	0 orcexec.9TItYR
+       	0 orcexec.4uLy2o
+
+
+
+
+# mmc dev 0 stands for sd card
+	dev 1 stands for emmc
+
+	dev 0:1 stands for the first partition of sd card
+	dev 0:2 stands for the second partition of the sd card
+
+	dev 1:1 stands for the first partition of the emmc
+	dev 1:2 stands for the second partition of the emmc
+ 
+
+
+After u-boot is started, press <Enter> to enter command line of uboot.
+bootcmd stores the default command for uboot after the 3 seconds countdown. It will be executed once 3 seconds countdown finished.
+=> setenv bootcmd 'mmc dev 0;fatload mmc 0:1 80800000 zimage;fatload mmc 0:1 83000000 imx6ull-alientek-emmc-luyaohan1001.dtb;bootz 80800000 - 8300000'
+
+=> setenv bootargs 'console=tty1 console=ttymxc0,115200 root=/dev/mmcblk0p2 rootwait rw'
+
+=> boot # or hit the reset button.
+
+Some known solutions to issues:
+If you can enter u-boot and kernel starting but there's errors related to 'init', then the boot env variables are probably not set to the right partition. 
+
+If you can enter u-boot and it keeps resetting, the file system is not compressed right. Check with ls dev 0:1..etc to see if you see the /usr, /bin ... folders in the partition.
+
+
+When booting is successful: expect the following:
+
+
+								-------- -------- -------- --------
+
+								Starting kernel ...
+
+
+								Booting Linux on physical CPU 0x0
+								Linux version 4.1.15 (luyaohan1001@lyc) (gcc version 4.9.4 (Linaro GCC 4.9-2017.01) ) #1 SMP PREEMPT Wed Mar 16 14:21:25 EDT 2022
+								CPU: ARMv7 Processor [410fc075] revision 5 (ARMv7), cr=10c5387d
+								CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
+								Machine model: Freescale i.MX6 ULL 14x14 EVK Board
+								Reserved memory: created CMA memory pool at 0x8c000000, size 320 MiB
+								Reserved memory: initialized node linux,cma, compatible id shared-dma-pool
+								Memory policy: Data cache writealloc
+								PERCPU: Embedded 12 pages/cpu @8bb32000 s16768 r8192 d24192 u49152
+								Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 130048
+								Kernel command line: console=ttymxc0,115200 root=/dev/mmcblk0p2 rootwait rw
+								PID hash table entries: 2048 (order: 1, 8192 bytes)
+								Dentry cache hash table entries: 65536 (order: 6, 262144 bytes)
+								Inode-cache hash table entries: 32768 (order: 5, 131072 bytes)
+								Memory: 180852K/524288K available (6883K kernel code, 322K rwdata, 2356K rodata, 400K init, 424K bss, 15756K reserved, 327680K cma-reserved, 0K highmem)
+								Virtual kernel memory layout:
+										vector  : 0xffff0000 - 0xffff1000   (   4 kB)
+										fixmap  : 0xffc00000 - 0xfff00000   (3072 kB)
+										vmalloc : 0xa0800000 - 0xff000000   (1512 MB)
+										lowmem  : 0x80000000 - 0xa0000000   ( 512 MB)
+										pkmap   : 0x7fe00000 - 0x80000000   (   2 MB)
+										modules : 0x7f000000 - 0x7fe00000   (  14 MB)
+											.text : 0x80008000 - 0x8090df3c   (9240 kB)
+											.init : 0x8090e000 - 0x80972000   ( 400 kB)
+											.data : 0x80972000 - 0x809c29c0   ( 323 kB)
+											 .bss : 0x809c5000 - 0x80a2f2f0   ( 425 kB)
+								SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+								Preemptible hierarchical RCU implementation.
+								\0x09Additional per-CPU info printed with stalls.
+								\0x09RCU restricting CPUs from NR_CPUS=4 to nr_cpu_ids=1.
+								RCU: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=1
+								NR_IRQS:16 nr_irqs:16 16
+								mxc_clocksource_init 3000000
+								Switching to timer-based delay loop, resolution 333ns
+								sched_clock: 32 bits at 3000kHz, resolution 333ns, wraps every 715827882841ns
+								clocksource mxc_timer1: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 637086815595 ns
+								Console: colour dummy device 80x30
+								Calibrating delay loop (skipped), value calculated using timer frequency.. 6.00 BogoMIPS (lpj=30000)
+								pid_max: default: 32768 minimum: 301
+								Mount-cache hash table entries: 1024 (order: 0, 4096 bytes)
+								Mountpoint-cache hash table entries: 1024 (order: 0, 4096 bytes)
+								CPU: Testing write buffer coherency: ok
+								/cpus/cpu@0 missing clock-frequency property
+								CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
+								Setting up static identity map for 0x80008280 - 0x800082f0
+								Brought up 1 CPUs
+								SMP: Total of 1 processors activated (6.00 BogoMIPS).
+								CPU: All CPU(s) started in SVC mode.
+								devtmpfs: initialized
+								device-tree: Duplicate name in lcdif@021c8000, renamed to "display#1"
+								VFP support v0.3: implementor 41 architecture 2 part 30 variant 7 rev 5
+								clocksource jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+								pinctrl core: initialized pinctrl subsystem
+								NET: Registered protocol family 16
+								DMA: preallocated 256 KiB pool for atomic coherent allocations
+								cpuidle: using governor ladder
+								cpuidle: using governor menu
+								hw-breakpoint: found 5 (+1 reserved) breakpoint and 4 watchpoint registers.
+								hw-breakpoint: maximum watchpoint size is 8 bytes.
+								imx6ul-pinctrl 20e0000.iomuxc: initialized IMX pinctrl driver
+								imx6ul-pinctrl 2290000.iomuxc-snvs: initialized IMX pinctrl driver
+								mxs-dma 1804000.dma-apbh: initialized
+								SCSI subsystem initialized
+								usbcore: registered new interface driver usbfs
+								usbcore: registered new interface driver hub
+								usbcore: registered new device driver usb
+								i2c i2c-0: IMX I2C adapter registered
+								i2c i2c-0: can't use DMA
+								i2c i2c-1: IMX I2C adapter registered
+								i2c i2c-1: can't use DMA
+								Linux video capture interface: v2.00
+								pps_core: LinuxPPS API ver. 1 registered
+								pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+								PTP clock support registered
+								Advanced Linux Sound Architecture Driver Initialized.
+								Switched to clocksource mxc_timer1
+								NET: Registered protocol family 2
+								TCP established hash table entries: 4096 (order: 2, 16384 bytes)
+								TCP bind hash table entries: 4096 (order: 3, 32768 bytes)
+								TCP: Hash tables configured (established 4096 bind 4096)
+								UDP hash table entries: 256 (order: 1, 8192 bytes)
+								UDP-Lite hash table entries: 256 (order: 1, 8192 bytes)
+								NET: Registered protocol family 1
+								RPC: Registered named UNIX socket transport module.
+								RPC: Registered udp transport module.
+								RPC: Registered tcp transport module.
+								RPC: Registered tcp NFSv4.1 backchannel transport module.
+								imx rpmsg driver is registered.
+								Bus freq driver module loaded
+								futex hash table entries: 256 (order: 2, 16384 bytes)
+								VFS: Disk quotas dquot_6.6.0
+								VFS: Dquot-cache hash table entries: 1024 (order 0, 4096 bytes)
+								NFS: Registering the id_resolver key type
+								Key type id_resolver registered
+								Key type id_legacy registered
+								jffs2: version 2.2. (NAND) \0xc2\0xa9 2001-2006 Red Hat, Inc.
+								fuse init (API version 7.23)
+								io scheduler noop registered
+								io scheduler deadline registered
+								io scheduler cfq registered (default)
+								imx-weim 21b8000.weim: Driver registered.
+								backlight supply power not found, using dummy regulator
+								21c8000.lcdif supply lcd not found, using dummy regulator
+								mxsfb 21c8000.lcdif: failed to find mxc display driver 
+								Console: switching to colour frame buffer device 60x34
+								mxsfb 21c8000.lcdif: initialized
+								imx-sdma 20ec000.sdma: no event needs to be remapped
+								imx-sdma 20ec000.sdma: loaded firmware 3.3
+								imx-sdma 20ec000.sdma: initialized
+								2020000.serial: ttymxc0 at MMIO 0x2020000 (irq = 18, base_baud = 5000000) is a IMX
+								console [ttymxc0] enabled
+								21e8000.serial: ttymxc1 at MMIO 0x21e8000 (irq = 235, base_baud = 5000000) is a IMX
+								imx sema4 driver is registered.
+								[drm] Initialized drm 1.1.0 20060810
+								[drm] Initialized vivante 1.0.0 20120216 on minor 0
+								brd: module loaded
+								loop: module loaded
+								fsl-quadspi 21e0000.qspi: unrecognized JEDEC id bytes: ff, ff, ff
+								fsl-quadspi 21e0000.qspi: Freescale QuadSPI probe failed
+								20b4000.ethernet supply phy not found, using dummy regulator
+								pps pps0: new PPS source ptp0
+								fec 20b4000.ethernet (unnamed net_device) (uninitialized): Invalid MAC address: 00:00:00:00:00:00
+								fec 20b4000.ethernet (unnamed net_device) (uninitialized): Using random MAC address: 7a:04:18:b7:dd:a7
+								libphy: fec_enet_mii_bus: probed
+								fec 20b4000.ethernet eth0: registered PHC device 0
+								2188000.ethernet supply phy not found, using dummy regulator
+								pps pps1: new PPS source ptp1
+								fec 2188000.ethernet (unnamed net_device) (uninitialized): Invalid MAC address: 00:00:00:00:00:00
+								fec 2188000.ethernet (unnamed net_device) (uninitialized): Using random MAC address: fe:26:33:1b:24:ce
+								fec 2188000.ethernet eth1: registered PHC device 1
+								ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+								ehci-mxc: Freescale On-Chip EHCI Host driver
+								usbcore: registered new interface driver usb-storage
+								2184800.usbmisc supply vbus-wakeup not found, using dummy regulator
+								2184000.usb supply vbus not found, using dummy regulator
+								2184200.usb supply vbus not found, using dummy regulator
+								ci_hdrc ci_hdrc.1: EHCI Host Controller
+								ci_hdrc ci_hdrc.1: new USB bus registered, assigned bus number 1
+								ci_hdrc ci_hdrc.1: USB 2.0 started, EHCI 1.00
+								hub 1-0:1.0: USB hub found
+								hub 1-0:1.0: 1 port detected
+								Mass Storage Function, version: 2009/09/11
+								LUN: removable file: (no medium)
+								no file given for LUN0
+								g_mass_storage ci_hdrc.0: failed to start g_mass_storage: -22
+								mousedev: PS/2 mouse device common for all mice
+								input: 20cc000.snvs:snvs-powerkey as /devices/platform/soc/2000000.aips-bus/20cc000.snvs/20cc000.snvs:snvs-powerkey/input/input0
+								input: iMX6UL TouchScreen Controller as /devices/platform/soc/2000000.aips-bus/2040000.tsc/input/input1
+								snvs_rtc 20cc000.snvs:snvs-rtc-lp: rtc core: registered 20cc000.snvs:snvs-r as rtc0
+								i2c /dev entries driver
+								IR NEC protocol handler initialized
+								IR RC5(x/sz) protocol handler initialized
+								IR RC6 protocol handler initialized
+								IR JVC protocol handler initialized
+								IR Sony protocol handler initialized
+								IR SANYO protocol handler initialized
+								IR Sharp protocol handler initialized
+								IR MCE Keyboard/mouse protocol handler initialized
+								IR XMP protocol handler initialized
+								pxp-v4l2 pxp_v4l2: initialized
+								imx2-wdt 20bc000.wdog: use WDOG_B to reboot.
+								imx2-wdt 20bc000.wdog: timeout 60 sec (nowayout=0)
+								sdhci: Secure Digital Host Controller Interface driver
+								sdhci: Copyright(c) Pierre Ossman
+								sdhci-pltfm: SDHCI platform and OF driver helper
+								/soc/aips-bus@02100000/usdhc@02190000: voltage-ranges unspecified
+								sdhci-esdhc-imx 2190000.usdhc: Got CD GPIO
+								sdhci-esdhc-imx 2190000.usdhc: No vqmmc regulator found
+								mmc0: SDHCI controller on 2190000.usdhc [2190000.usdhc] using ADMA
+								/soc/aips-bus@02100000/usdhc@02194000: voltage-ranges unspecified
+								sdhci-esdhc-imx 2194000.usdhc: could not get ultra high speed state, work on normal mode
+								sdhci-esdhc-imx 2194000.usdhc: No vmmc regulator found
+								sdhci-esdhc-imx 2194000.usdhc: No vqmmc regulator found
+								mmc1: SDHCI controller on 2194000.usdhc [2194000.usdhc] using ADMA
+								usbcore: registered new interface driver usbhid
+								usbhid: USB HID core driver
+								mmc0: host does not support reading read-only switch, assuming write-enable
+								usb 1-1: new high-speed USB device number 2 using ci_hdrc
+								mmc0: Problem setting current limit!
+								NET: Registered protocol family 10
+								sit: IPv6 over IPv4 tunneling driver
+								NET: Registered protocol family 17
+								Key type dns_resolver registered
+								Registering SWP/SWPB emulation handler
+								snvs_rtc 20cc000.snvs:snvs-rtc-lp: setting system clock to 1970-01-01 02:51:55 UTC (10315)
+								can-3v3: disabling
+								ALSA device list:
+									No soundcards found.
+								Waiting for root device /dev/mmcblk0p2...
+								mmc0: new ultra high speed DDR50 SDHC card at address e624
+								mmcblk0: mmc0:e624 SL08G 7.40 GiB 
+								 mmcblk0: p1 p2
+								hub 1-1:1.0: USB hub found
+								hub 1-1:1.0: 4 ports detected
+								kjournald starting.  Commit interval 5 seconds
+								EXT3-fs (mmcblk0p2): using internal journal
+								EXT3-fs (mmcblk0p2): mounted filesystem with ordered data mode
+								VFS: Mounted root (ext3 filesystem) on device 179:2.
+								devtmpfs: mounted
+								Freeing unused kernel memory: 400K (8090e000 - 80972000)
+								mmc1: MAN_BKOPS_EN bit is not set
+								mmc1: new DDR MMC card at address 0001
+								mmcblk1: mmc1:0001 8GTF4R 7.28 GiB 
+								mmcblk1boot0: mmc1:0001 8GTF4R partition 1 4.00 MiB
+								mmcblk1boot1: mmc1:0001 8GTF4R partition 2 4.00 MiB
+								mmcblk1rpmb: mmc1:0001 8GTF4R partition 3 512 KiB
+								 mmcblk1: p1 p2
+
+								Please press Enter to activate this console. 
+								/ # 
+	
+								-------- -------- -------- --------
+
